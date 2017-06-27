@@ -1,4 +1,5 @@
 from operator import itemgetter
+import sys
 
 import numpy as np
 import scipy.special as spsp
@@ -107,8 +108,9 @@ class CovMatAdapt:
                                           size=pop_size)
         x = mean_vec + step_size*y
         func_values = list(map(func, x))
-
-        return (y, x, func_values)
+        conc_matrix = np.c_[func_values, x, y]
+        conc_matrix = conc_matrix[conc_matrix[:,0].argsort()]
+        return conc_matrix
 
     def zip_and_sort(self, func_values, x, y):
         zipped = list(zip(func_values, x, y))
@@ -120,22 +122,24 @@ class CovMatAdapt:
 
         expec_norm_gaussian = (np.sqrt(2) * spsp.gamma(0.5*(self.ndim + 1)) /
                                spsp.gamma(0.5*self.ndim))
-        y, x, func_values = sample_and_evaluate(self.func, self.ndim,
+        y, x, func_values = self.sample_and_evaluate(self.func, self.ndim,
                                                 self.mean_vec, self.cov_mat,
                                                 self.pop_size, self.step_size)
-        sorted_values = zip_and_sort(func_values, x, y)
+        sorted_values = self.zip_and_sort(func_values, x, y)
 
         y = sorted_values[2]
         x = sorted_values[1]
         func_values = sorted_values[0]
-
-        best_fvalue = sort_values[0][0]
-        best_param = sort_values[0][1]
+        print(y, x, func_values, sep='\n')
+        print(type(y))
+        best_fvalue = sorted_values[0][0]
+        best_param = sorted_values[0][1]
 
         for i in range(self.maxiter):
-            y_weighted = sum(y[:self.elite_size] *
+            y_weighted = np.sum(y[:self.elite_size] *
                              self.weights[:self.elite_size])
-
+            self.mean_vec = self.mean_vec + self.c_m*self.step_size*y_weighted
+            return None
         else:
             print('Failed to converge within maximum iteration bound.')
 
