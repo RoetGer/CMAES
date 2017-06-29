@@ -25,7 +25,7 @@ class CovMatAdapt:
         if pop_size:
             self.pop_size = pop_size
         else:
-            self.pop_size = 4 + np.floor(3*np.log(self.ndim))
+            self.pop_size = int(4 + np.floor(3*np.log(self.ndim)))
 
         if elite_size:
             self.elite_size = elite_size
@@ -37,7 +37,6 @@ class CovMatAdapt:
         else:
             self.weights = (np.log(0.5*(self.pop_size + 1)) -
                             np.log(np.arange(1, self.pop_size+1)))
-
 
         norm_pos_weights = (self.weights[:self.elite_size] /
                             sum(self.weights[:self.elite_size]))
@@ -90,7 +89,6 @@ class CovMatAdapt:
             alpha_mu_eff_neg = 1 + 2*mu_eff_neg / (self.mu_eff + 2)
             alpha_pos_def_neg = ((1 - self.c_1 - self.c_mu) /
                                   (self.ndim*self.c_mu))
-            print(alpha_mu_neg, alpha_mu_eff_neg, alpha_pos_def_neg)
             self.weights[:self.elite_size] = norm_pos_weights
             denom = min(alpha_mu_neg, alpha_mu_eff_neg, alpha_pos_def_neg)
             self.weights[self.elite_size:] = (denom * neg_weights /
@@ -211,16 +209,3 @@ class CovMatAdapt:
                            'cov matrix': self.cov_mat,
                            'converged in': self.maxgen}
             return result_dict
-
-'''
-def test_func(vec):
-    x, y = vec
-    return x**2 + y**2
-
-if __name__ == '__main__':
-    mean_vec = np.array([1, 2])
-
-    cma_obj = CovMatAdapt(test_func, mean_vec, step_size=1, pop_size=25)
-
-    print(cma_obj.minimize())
-'''
