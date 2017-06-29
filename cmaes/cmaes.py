@@ -5,8 +5,6 @@ import numpy as np
 import scipy.linalg as spla
 import scipy.special as spsp
 
-np.random.seed(5)
-
 class CovMatAdapt:
 
     def __init__(self, func, mean_vec, step_size, pop_size=None,
@@ -37,8 +35,8 @@ class CovMatAdapt:
         if weights:
             self.weights = weights
         else:
-            self.weights = (np.log(0.5*(pop_size + 1)) -
-                            np.log(np.arange(1, pop_size+1)))
+            self.weights = (np.log(0.5*(self.pop_size + 1)) -
+                            np.log(np.arange(1, self.pop_size+1)))
 
 
         norm_pos_weights = (self.weights[:self.elite_size] /
@@ -214,7 +212,7 @@ class CovMatAdapt:
                            'converged in': self.maxgen}
             return result_dict
 
-
+'''
 def test_func(vec):
     x, y = vec
     return x**2 + y**2
@@ -225,3 +223,4 @@ if __name__ == '__main__':
     cma_obj = CovMatAdapt(test_func, mean_vec, step_size=1, pop_size=25)
 
     print(cma_obj.minimize())
+'''
