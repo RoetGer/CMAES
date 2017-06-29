@@ -121,7 +121,8 @@ class CovMatAdapt:
             return 0
 
     def minimize(self):
-
+        # Matrix to fix some numerical issues with the cholesky decomposition.
+        offset_matrix = np.identity(self.ndim)*0.01
         expec_norm_gaussian = (np.sqrt(2) * spsp.gamma(0.5*(self.ndim + 1)) /
                                spsp.gamma(0.5*self.ndim))
         pop_matrix = self.sample_and_evaluate(self.func, self.ndim,
@@ -152,8 +153,11 @@ class CovMatAdapt:
                 return result_dict
 
             self.mean_vec = upd_mean_vec
-            chol_covm_L = spla.cholesky(self.cov_mat, lower=True)
-
+            try:
+                chol_covm_L = spla.cholesky(self.cov_mat + offset_matrix, lower=True)
+            except np.linalg.linalg.LinAlgError as err:
+                print('We have hit an linalg exception in the cholesky decomposition')
+                print(repr(err))
             c_y_vec = spla.solve_triangular(chol_covm_L, y_weighted, lower=True)
 
             # Updating the step sizes
