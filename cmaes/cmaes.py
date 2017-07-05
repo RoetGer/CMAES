@@ -11,7 +11,7 @@ class CovMatAdapt:
                      elite_size=None, weights=None,
                      c_sig=None, d_sig=None, c_c=None,
                      c_1=None, c_mu=None, c_m=None, abs_tol=1e-5,
-                     rel_tol=1e-4, maxgen=50):
+                     rel_tol=1e-4, maxgen=50, verbose=True):
 
         self.func = func
         self.mean_vec = mean_vec
@@ -100,6 +100,8 @@ class CovMatAdapt:
         self.p_sig = 0
         self.p_c = 0
 
+        self.verbose=verbose
+
     def sample_and_evaluate(self, func, ndim, mean_vec,
                             cov_mat, pop_size, step_size):
         y = np.random.multivariate_normal(np.zeros(ndim),
@@ -134,6 +136,9 @@ class CovMatAdapt:
         func_values = pop_matrix[:,0]
         best_fvalue = pop_matrix[0,0]
         best_param = x[0,:]
+
+        if self.verbose:
+            print('Initial value:', best_fvalue)
 
         for gen in range(1, self.maxgen + 1):
             y_weighted = np.sum(y[:self.elite_size] *
@@ -206,6 +211,9 @@ class CovMatAdapt:
             if func_values[0] < best_fvalue:
                 best_fvalue = pop_matrix[0,0]
                 best_param = x[0,:]
+
+            if self.verbose and gen%5 == 0:
+                print('Best value after', gen, 'generations:', best_fvalue)
 
         else:
             print('Failed to converge within maximum generation bound.')
