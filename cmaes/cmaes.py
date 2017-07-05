@@ -154,10 +154,12 @@ class CovMatAdapt:
 
             self.mean_vec = upd_mean_vec
             try:
-                chol_covm_L = spla.cholesky(self.cov_mat + offset_matrix, lower=True)
+                chol_covm_L = spla.cholesky(self.cov_mat, lower=True)
             except np.linalg.linalg.LinAlgError as err:
                 print('We have hit an linalg exception in the cholesky decomposition')
                 print(repr(err))
+                chol_covm_L = spla.cholesky(self.cov_mat + offset_matrix, lower=True)
+
             c_y_vec = spla.solve_triangular(chol_covm_L, y_weighted, lower=True)
 
             # Updating the step sizes
