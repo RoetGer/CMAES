@@ -1,5 +1,6 @@
 from operator import itemgetter
 import sys
+import warnings
 
 import numpy as np
 import scipy.linalg as spla
@@ -104,9 +105,14 @@ class CovMatAdapt:
 
     def sample_and_evaluate(self, func, ndim, mean_vec,
                             cov_mat, pop_size, step_size):
-        y = np.random.multivariate_normal(np.zeros(ndim),
-                                          cov_mat,
-                                          size=pop_size)
+        with warnings.catch_warnings():
+            if not self.verbose:
+                warnings.filterwarnings('ignore')
+
+            y = np.random.multivariate_normal(np.zeros(ndim),
+                                              cov_mat,
+                                              size=pop_size)
+
         x = mean_vec + step_size*y
         func_values = list(map(func, x))
         conc_matrix = np.c_[func_values, x, y]
@@ -124,7 +130,7 @@ class CovMatAdapt:
 
     def minimize(self):
         # Matrix to fix some numerical issues with the cholesky decomposition.
-        offset_matrix = np.identity(self.ndim)*0.01
+        offset_matrix = np.identity(self.ndim)*0.1
         expec_norm_gaussian = (np.sqrt(2) * spsp.gamma(0.5*(self.ndim + 1)) /
                                spsp.gamma(0.5*self.ndim))
         pop_matrix = self.sample_and_evaluate(self.func, self.ndim,
@@ -161,9 +167,15 @@ class CovMatAdapt:
             try:
                 chol_covm_L = spla.cholesky(self.cov_mat, lower=True)
             except np.linalg.linalg.LinAlgError as err:
-                print('We have hit an linalg exception in the cholesky decomposition')
-                print(repr(err))
-                chol_covm_L = spla.cholesky(self.cov_mat + offset_matrix, lower=True)
+                if self.verbose:
+                    print('We have hit an linalg exception in the cholesky decomposition')
+                    print(repr(err))
+                try:
+                    chol_covm_L = spla.cholesky(self.cov_mat + offset_matrix, lower=True)
+                except:
+                    if self.verbose:
+                        print(('Even the matrix with increased diagonal elements',
+                               'failed.'))
 
             c_y_vec = spla.solve_triangular(chol_covm_L, y_weighted, lower=True)
 
