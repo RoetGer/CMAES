@@ -6,6 +6,38 @@ import scipy.special as spsp
 
 
 class CovMatAdapt:
+    """ Covariance Matrix Adaption Evolution Strategy
+
+    Implements the Covariance Matrix Adaption Evolution Strategy
+    as described in 'The CMA Evolution Strategy: A Tutorial' by
+    Nikolaus Hansen. For exact details and meaning of the parameters,
+    please see the tutorial.
+
+    Args:
+        func (numpy array -> float): Function to optimize.
+        mean_vec (numpy array): Initiale locations to start the optimization.
+        step_size (float > 0): Overall variance step size. Rule of thumb:
+            Choose it in a way that the optimum is within mean_vec +/-
+            3*step_size.
+        pop_size (int > 0): How many samples should be generated in each
+            generation?
+        elite_size (int > 0): How many of the top samples are used to
+            reproduce?
+        weights (numpy array): To weight the contribution of the different
+            elites.
+        c_sig (float > 0): Learning rate for the cumulation for the step-size
+            control.
+        d_sig (float > 0): Dampening parameter for step-size updates.
+        c_c (float > 0): Learning rate for cumulation for rank-one updates.
+        c_1 (float > 0): Learning rate for rank-one updates.
+        c_mu (float > 0): Learning rate for rank-mu updates.
+        c_m (float > 0): Learning rate for mean vector updates.
+        abs_tol (float > 0): Absolute change criterion for early stopping.
+        rel_tol (float > 0): Relative change criterion for early stopping.
+        maxgen (int > 0): Maximum number of generations/iterations before
+            termination.
+        verbose (bool): Provides extra feedback for the user.
+    """
 
     def __init__(self, func, mean_vec, step_size, pop_size=None,
                  elite_size=None, weights=None,
@@ -105,6 +137,25 @@ class CovMatAdapt:
 
     def sample_and_evaluate(self, func, ndim, mean_vec,
                             cov_mat, pop_size, step_size):
+        """ Samples the function evaluations
+
+        Used to sample the candidate values and evaluates them.
+
+        Args:
+            func (numpy array -> float): Function to evaluate.
+            ndim (int > 0): Number of dimensions.
+            mean_vec (numpy array): Mean vector of the multivariate Gaussian
+                distribution.
+            cov_mat (numpy array): Covariance matrix of the multivariate
+                Gaussian distribution.
+            pop_size (int > 0): Number of samples.
+            step_size (float > 0): Overall variance step size.
+
+        Returns:
+            Numpy array containing the function values, the mean-centered and
+            step_size ajusted input values, and zero-centered and unadjusted
+            input values as columns.
+        """
         with warnings.catch_warnings():
             if not self.verbose:
                 warnings.filterwarnings('ignore')
@@ -120,6 +171,24 @@ class CovMatAdapt:
         return conc_matrix
 
     def heaviside(self, gen, norm_p_sig, c_sig, ndim, expec_norm_gaussian):
+        """Heaviside function
+
+        Prevents too fast increases of axes of the covariance matrix.
+
+        Args:
+            gen (int > 0): The current generation the minimization procedure is
+                in.
+            norm_p_sig(float > 0): The norm of p_sig.
+            c_sig (float > 0): Learning rate for the cumulation for the
+                step-size control.
+            ndim (int > 0): Number of dimensions.
+            expec_norm_gaussian (float > 0): Expectation of the norm of a
+                multivariate standard normal distribution.
+
+        Returns:
+            0 or 1.
+
+        """
         a = norm_p_sig / (np.sqrt(1 - (1 - c_sig)**(2 * (gen + 1))))
         b = (1.4 + 2 / (ndim + 1)) * expec_norm_gaussian
 
@@ -129,6 +198,24 @@ class CovMatAdapt:
             return 0
 
     def minimize(self):
+        """Minimize objective function
+
+        Returns:
+            Dictionary containing following keys:
+                'best fvalue' (float): Best function value that has been
+                    reached.
+                'best param' (numpy array): Parameters corresponding to best
+                    function value.
+                'mean vector' (numpy array): Last mean vector obtained during
+                    the minimization.
+                'cov matrix' (numpy array): Last covariance matrix obtained
+                    during minimization.
+                'converged in' (int): Generation in which the procedure
+                    converged.
+                'abs/rel conv': Information about absolute and relative
+                    convergence.
+
+        """
         # Matrix to fix some numerical issues with the cholesky decomposition.
         offset_matrix = np.identity(self.ndim) * 0.1
         expec_norm_gaussian = (np.sqrt(2) * spsp.gamma(0.5 * (self.ndim + 1)) /
